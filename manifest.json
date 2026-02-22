@@ -1,0 +1,16 @@
+{
+  "short_name": "ForjaEstoque",
+  "name": "Conferência de Estoque Forja Fantasy",
+  "icons": [
+    {
+      "src": "logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "./index.html",
+  "display": "standalone",
+  "theme_color": "#F5F5DC",
+  "background_color": "#F5F5DC"
+}

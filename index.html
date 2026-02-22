@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulário de Conferência de Estoque</title>
+    <link rel="manifest" href="manifest.json">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F5F5DC;
+        }
+        .container {
+            max-width: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        .accordion-button {
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        /* Style for accordion content to allow dynamic height */
+        .accordion-content {
+            max-height: 0;
+            padding: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-in-out, padding 0.5s ease-in-out;
+        }
+        .accordion-content.active {
+            max-height: 9999px; /* Use a very large value to ensure all content is visible */
+            padding: 1rem;
+        }
+        .product-container {
+            border-bottom: 1px solid #D1C4A5;
+        }
+        .product-container:last-child {
+            border-bottom: none;
+        }
+        .product-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.5rem;
+        }
+        .auto-resize-textarea {
+            resize: none;
+            overflow: hidden;
+            min-height: 2.5rem; /* Min-height para uma linha de texto */
+        }
+    </style>
+</head>
+<body class="p-2 md:p-4">
+
+    <!-- Main Container -->
+    <div class="container mx-auto p-2 md:p-4 bg-[#F5F5DC]">
+        
+        <!-- Header Image Container -->
+        <div class="flex items-center justify-center mb-4 space-x-4">
+            <img src="https://images.tcdn.com.br/img/img_prod/750119/1751505538_logo_forja_fantasy__500px_sem_fundo.png" alt="Logo da Forja Fantasy" class="h-24 w-auto max-w-[45%] flex-shrink-0">
+            <img src="https://focosistemas.com.br/wp-content/uploads/2022/02/Planilha_de_Controle_de_Estoque_19_39_01.png" alt="Planilha de Controle de Estoque" class="h-24 w-auto max-w-[45%] rounded-xl shadow-md">
+        </div>
+
+        <!-- Title -->
+        <h1 class="text-center text-3xl font-bold text-amber-950 my-4">📦 CONFERÊNCIA DE ESTOQUE</h1>
+        
+        <!-- Clear Form Button -->
+        <div class="flex justify-center mb-4">
+            <button id="clear-form-button" class="px-6 py-3 bg-red-600 text-white font-bold rounded-lg shadow-md hover:bg-red-700 transition-colors duration-200">
+                LIMPAR FORMULÁRIO
+            </button>
+        </div>
+
+        <!-- Date and Responsible -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between items-start mb-4 space-y-2 md:space-y-0">
+            <div class="flex items-center w-full md:w-auto">
+                <label for="date-input" class="text-amber-950 font-medium mr-2 whitespace-nowrap">📅 Data:</label>
+                <input type="date" id="date-input" class="flex-grow p-2 rounded-lg border border-amber-800 text-amber-950 bg-white focus:outline-none focus:ring-2 focus:ring-amber-800">
+                <button id="today-button" class="ml-2 px-4 py-2 bg-amber-800 text-white font-medium rounded-lg shadow-md hover:bg-amber-900 transition-colors duration-200">Hoje</button>
+            </div>
+            
+            <div class="flex items-center w-full md:w-auto mt-2 md:mt-0">
+                <label for="responsible-select" class="text-amber-950 font-medium mr-2 whitespace-nowrap">👤 Responsável:</label>
+                <select id="responsible-select" class="flex-grow p-2 rounded-lg border border-amber-800 text-amber-950 bg-white focus:outline-none focus:ring-2 focus:ring-amber-800">
+                    <option value="" disabled selected>Selecione</option>
+                    <option value="Fernando">Fernando</option>
+                    <option value="João">João</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Accordion for Topics and Subtopics -->
+        <div id="accordion-container" class="space-y-4">
+            <!-- Topics will be dynamically generated here -->
+        </div>
+
+        <!-- WhatsApp Preview Section -->
+        <div class="mt-8 p-4 bg-white rounded-xl shadow-lg border border-amber-800">
+            <h2 class="text-lg font-bold text-amber-950 mb-2">Prévia para WhatsApp</h2>
+            <div id="whatsapp-preview" class="p-3 bg-[#BEFBB1] rounded-lg whitespace-pre-wrap text-sm text-gray-800 border border-gray-300">
+                O texto da conferência aparecerá aqui.
+            </div>
+            
+            <button id="copy-button" class="mt-4 w-full px-4 py-3 bg-green-600 text-white font-bold rounded-lg shadow-md hover:bg-green-700 transition-colors duration-200">
+                Copiar para Whatsapp
+            </button>
+            <div id="copy-confirmation" class="text-center text-green-600 mt-2 hidden">Texto copiado!</div>
+        </div>
+    </div>
+
+    <!-- General Confirmation Modal (for copy errors) -->
+    <div id="modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden">
+        <div class="bg-white p-6 rounded-lg shadow-xl text-center">
+            <h3 class="text-lg font-bold mb-4">Atenção</h3>
+            <p id="modal-message" class="mb-4">Confirmação de ação.</p>
+            <button id="modal-close-button" class="px-4 py-2 bg-amber-800 text-white rounded-lg hover:bg-amber-900">Fechar</button>
+        </div>
+    </div>
+
+    <!-- Clear Form Confirmation Modal -->
+    <div id="clear-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden">
+        <div class="bg-white p-6 rounded-lg shadow-xl text-center">
+            <h3 class="text-lg font-bold text-amber-950 mb-4">Confirmar Limpeza</h3>
+            <p class="text-amber-950 mb-4">Tem certeza de que deseja limpar todo o formulário? Esta ação não pode ser desfeita.</p>
+            <div class="flex justify-center space-x-4">
+                <button id="confirm-clear-button" class="px-4 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700">Sim, Limpar</button>
+                <button id="cancel-clear-button" class="px-4 py-2 bg-gray-300 text-gray-800 font-bold rounded-lg hover:bg-gray-400">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // Sample data for products
+            const productData = {
+                "Materiais de Embalagem": {
+                    "Envelopes de segurança": [
+                        { name: "Envelope plástico- 15X20", minQde: "1000" },
+                        { name: "Envelope plástico- 24X30", minQde: "50" },
+                        { name: "Envelope plástico- 26X36", minQde: "50" },
+                        { name: "Envelope plástico- 40X50", minQde: "20" },
+                        { name: "Envelope plástico- 50X60", minQde: "20" },
+                        { name: "Envelope plástico- Gigante", minQde: "5" }
+                    ],
+                    "Etiquetas térmicas": [
+                        { name: "Etiqueta térmica 10X15", minQde: "5 rolos" },
+                        { name: "Etiqueta térmica 4X6", minQde: "2 rolos" },
+                        { name: "Etiqueta térmica 2,5X4", minQde: "3 rolos" }
+                    ],
+                    "Sacos Zip": [
+                        { name: "Saco Zip n.º 0", minQde: "2 pct" },
+                        { name: "Saco Zip n.º 1", minQde: "2 pct" },
+                        { name: "Saco Zip n.º 2", minQde: "5 pct" },
+                        { name: "Saco Zip n.º 3", minQde: "10 pct" },
+                        { name: "Saco Zip n.º 4", minQde: "2 pct" },
+                        { name: "Saco Zip n.º 5", minQde: "2 pct" },
+                        { name: "Saco Zip n.º 7", minQde: "1 pct" }
+                    ],
+                    "Caixinhas de acrílico": [
+                        { name: "Caixinhas acrílico 5X5", minQde: "100 un" },
+                        { name: "Caixinhas acrílico 6X6", minQde: "30 un" },
+                        { name: "Caixinhas acrílico 6X7", minQde: "30 un" }
+                    ],
+                    "Sacos para Grid Papel": [
+                        { name: "Saco para A3", minQde: "100 un" },
+                        { name: "Saco para A4", minQde: "100 un" }
+                    ],
+                    "Embalagens especiais": [
+                        { name: "Saco zip furta-cor", minQde: "100 un" },
+                        { name: "Bolsa de dados preta", minQde: "100 un" },
+                        { name: "Bolsinha branca do Sonic", minQde: "100 un" },
+                        { name: "Bolsinha amarela do Sonic", minQde: "100 un" }
+                    ],
+                    "Caixas de papelão": [
+                        { name: "Caixas mini", minQde: "3 fardos" },
+                        { name: "Caixas Padrão de Grid", minQde: "1 fardo" },
+                        { name: "Caixas Larga de Grid", minQde: "1 fardo" },
+                        { name: "Caixas Larga de Grid", minQde: "1 fardo" },
+                        { name: "Caixas Alta de Grid", minQde: "1 fardo" },
+                        { name: "Caixas de Papel A3", minQde: "1 fardo" },
+                        { name: "Caixas Padrão de Torre P", minQde: "3 fardos" },
+                        { name: "Caixas Padrão de Torre M", minQde: "1 fardo" },
+                        { name: "Caixas Padrão de Torre G", minQde: "1 fardo" },
+                        { name: "Caixas Padrão de Controladores", minQde: "1 fardo" },
+                        { name: "Caixas de \"pizza\"", minQde: "20 un" }
+                    ],
+                    "Itens gerais": [
+                        { name: "Fita Adesiva Larga Parda", minQde: "5 un" },
+                        { name: "Fita Adesiva Larga Transparente", minQde: "3 un" },
+                        { name: "Fita Adesiva fina", minQde: "3 un" },
+                        { name: "Durex pequeno", minQde: "1 un" },
+                        { name: "Fita adesiva \"FRÁGIL\"", minQde: "1 un" },
+                        { name: "Folha ofício A4", minQde: "1 pct" },
+                        { name: "Rolo adesivo \"FRÁGIL\"", minQde: "1 rolo" },
+                        { name: "Plástico bolha", minQde: "1 rolo" },
+                        { name: "Panfletos Marketplaces", minQde: "500 un" },
+                        { name: "Panfletos site", minQde: "500 un" }
+                    ]
+                },
+                "Materiais de Produção": {
+                    "MDFs 3mm": [
+                        { name: "MDF BRANCO 3MM", minQde: "4 pedaços" },
+                        { name: "MDF CRU 3MM", minQde: "4 pedaços" }
+                    ],
+                    "Acrílicos 2mm": [
+                        { name: "Acrílico Transparente 2mm", minQde: "1 chapa" },
+                        { name: "Acrílico Branco", minQde: "1 chapa" },
+                        { name: "Acrílico Laranja Neon", minQde: "1 chapa" },
+                        { name: "Acrílico Amarelo Neon", minQde: "1 chapa" },
+                        { name: "Acrílico Azul translucido", minQde: "1/2 chapa" },
+                        { name: "Acrílico Preto", minQde: "1/4 chapa" },
+                        { name: "Acrílico Azul Bb", minQde: "1/4 chapa" },
+                        { name: "Acrílico Amarelo Bb", minQde: "1/4 chapa" },
+                        { name: "Acrílico Verde Bb", minQde: "1/4 chapa" },
+                        { name: "Acrílico Rosa chiclete", minQde: "1/4 chapa" },
+                        { name: "Acrílico Verde Bandeira", minQde: "1/4 chapa" },
+                        { name: "Acrílico Verde Cana", minQde: "1/4 chapa" },
+                        { name: "Acrílico Roxo", minQde: "1/4 chapa" },
+                        { name: "Acrílico Laranja", minQde: "1/4 chapa" },
+                        { name: "Acrílico Azul Marinho", minQde: "1/4 chapa" },
+                        { name: "Acrílico Cinza", minQde: "1/4 chapa" },
+                        { name: "Acrílico Vermelho", minQde: "1/4 chapa" },
+                        { name: "Acrílico Branco Translúcido", minQde: "1/4 chapa" },
+                        { name: "Acrílico Rosa translúcido", minQde: "1/4 chapa" }
+                    ],
+                    "Sacos plásticos": [
+                        { name: "Sacos plásticos 25x35", minQde: "2 pct" },
+                        { name: "Sacos plásticos 20X35", minQde: "1 pct" },
+                        { name: "Sacos plásticos 22X32", minQde: "1 pct" },
+                        { name: "Sacos plásticos 15X25", minQde: "1 pct" }
+                    ],
+                    "Imãs": [
+                        { name: "Imã 2X4 mm", minQde: "200 un" },
+                        { name: "Imã 2,8X2,8 mm", minQde: "200 un" },
+                        { name: "Imã 2,6X4 mm", minQde: "200 un" },
+                        { name: "Imã 2,9X4mm", minQde: "200 un" }
+                    ],
+                    "Neoprenes": [
+                        { name: "Neoprene vermelho", minQde: "0,5 m" },
+                        { name: "Neoprene branco", minQde: "0,5 m" }
+                    ],
+                    "Itens gerais": [
+                        { name: "Cola TekBond", minQde: "1 un" },
+                        { name: "Álcool 96", minQde: "2L" },
+                        { name: "Estopa", minQde: "5 pct" },
+                        { name: "Lâmina de Estilete", minQde: "1 cx" },
+                        { name: "Papel Toalha", minQde: "1 pct" },
+                        { name: "Caneta de quadro branco", minQde: "100" },
+                        { name: "Etiqueta \"Remover película 1 face\"", minQde: "1 rolo" },
+                        { name: "Etiqueta \"Remover película 2 faces\"", minQde: "1 rolo" },
+                        { name: "Seringa", minQde: "10 un" },
+                        { name: "Cotonete", minQde: "1 cx" },
+                        { name: "Saco Supermercado", minQde: "1 rolo" },
+                        { name: "Fita Crepe Larga", minQde: "2 un" },
+                        { name: "Saco de Lixo", minQde: "4 un" },
+                        { name: "Cola de Acrílico", minQde: "0,2 L" },
+                        { name: "Caneta de quadro branco", minQde: "200 un" },
+                        { name: "Caneta, Lápis e Borracha", minQde: "1 un" },
+                        { name: "Pano de limpeza dos Grids", minQde: "2 un" },
+                        { name: "Flanela", minQde: "1 un" }
+                    ]
+                }
+            };
+            
+            // State management object
+            let conferenceState = {};
+
+            const accordionContainer = document.getElementById('accordion-container');
+            const dateInput = document.getElementById('date-input');
+            const responsibleSelect = document.getElementById('responsible-select');
+            const whatsappPreview = document.getElementById('whatsapp-preview');
+            const modal = document.getElementById('modal');
+            const modalMessage = document.getElementById('modal-message');
+            const clearModal = document.getElementById('clear-modal');
+
+            // --- Lógica de LocalStorage ---
+            const saveToLocalStorage = () => {
+                localStorage.setItem('conferenceDate', dateInput.value);
+                localStorage.setItem('conferenceResponsible', responsibleSelect.value);
+                localStorage.setItem('conferenceState', JSON.stringify(conferenceState));
+            };
+
+            const loadFromLocalStorage = () => {
+                const savedDate = localStorage.getItem('conferenceDate');
+                const savedResponsible = localStorage.getItem('conferenceResponsible');
+                const savedState = localStorage.getItem('conferenceState');
+            
+                if (savedDate) {
+                    dateInput.value = savedDate;
+                }
+                if (savedResponsible) {
+                    responsibleSelect.value = savedResponsible;
+                }
+                if (savedState) {
+                    try {
+                        conferenceState = JSON.parse(savedState);
+                    } catch (e) {
+                        console.error("Failed to parse saved state from localStorage:", e);
+                        conferenceState = {};
+                    }
+                }
+            
+                // Renderiza o formulário e depois aplica os dados salvos
+                renderForm();
+                updateAllFieldsFromState();
+                updateWhatsappPreview();
+            };
+            
+            // Nova função para aplicar os dados salvos após a renderização
+            function updateAllFieldsFromState() {
+                Object.keys(conferenceState).forEach(productId => {
+                    const productState = conferenceState[productId];
+                    if (productState.status) {
+                        updateButtonVisuals(productId, productState.status);
+                        if (productState.status === 'Não') {
+                            const extraFields = document.getElementById(`extra-fields-${productId}`);
+                            if (extraFields) {
+                                extraFields.classList.remove('hidden');
+                                if (productState.quantity) {
+                                    const quantityInput = document.getElementById(`quantity-${productId}`);
+                                    if (quantityInput) quantityInput.value = productState.quantity;
+                                }
+                                if (productState.observations) {
+                                    const obsTextarea = document.getElementById(`obs-${productId}`);
+                                    if (obsTextarea) {
+                                        obsTextarea.value = productState.observations;
+                                        obsTextarea.style.height = 'auto';
+                                        obsTextarea.style.height = obsTextarea.scrollHeight + 'px';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+                // Atualizar o visual do checkbox "Todos OK"
+                Object.keys(productData).forEach(topic => {
+                    Object.keys(productData[topic]).forEach(subtopic => {
+                        const topicId = topic.replace(/[^a-zA-Z0-9]/g, '');
+                        const subtopicId = subtopic.replace(/[^a-zA-Z0-9]/g, '');
+                        updateSubtopicVisuals(topicId, subtopicId);
+                    });
+                });
+            }
+
+            // Function to generate and render the form from data
+            function renderForm() {
+                accordionContainer.innerHTML = '';
+                Object.keys(productData).forEach(topic => {
+                    // Add a horizontal line before each main topic for better separation.
+                    const hr = document.createElement('hr');
+                    hr.className = "my-4 border-t-2 border-amber-950";
+                    accordionContainer.appendChild(hr);
+
+                    const topicTitle = document.createElement('h2');
+                    topicTitle.className = "text-xl font-bold text-amber-950 mt-6 mb-2";
+                    topicTitle.textContent = topic.toUpperCase();
+                    accordionContainer.appendChild(topicTitle);
+                    const topicId = topic.replace(/[^a-zA-Z0-9]/g, '');
+
+                    Object.keys(productData[topic]).forEach(subtopic => {
+                        const subtopicId = subtopic.replace(/[^a-zA-Z0-9]/g, '');
+                        const hasProducts = productData[topic][subtopic].length > 0;
+                        
+                        let baseColor = 'bg-amber-200';
+                        
+                        const subtopicDiv = document.createElement('div');
+                        subtopicDiv.className = "rounded-xl shadow-lg border border-amber-800 mb-2";
+
+                        const headerButton = document.createElement('div');
+                        headerButton.className = `accordion-button flex items-center justify-between p-4 ${baseColor} text-amber-950 font-medium rounded-t-xl cursor-pointer`;
+                        headerButton.innerHTML = `
+                            <span>${subtopic}</span>
+                            ${hasProducts ? `<div class="flex items-center space-x-2">
+                                <label for="all-ok-${topicId}-${subtopicId}" class="text-sm font-medium whitespace-nowrap">Todos OK</label>
+                                <input type="checkbox" id="all-ok-${topicId}-${subtopicId}" data-subtopic="${subtopic}" data-topic="${topic}" class="form-checkbox text-amber-800 rounded-md">
+                            </div>` : ''}
+                        `;
+                        subtopicDiv.appendChild(headerButton);
+
+                        const contentDiv = document.createElement('div');
+                        contentDiv.className = "accordion-content bg-white rounded-b-xl";
+                        contentDiv.id = `content-${topicId}-${subtopicId}`;
+
+                        if (hasProducts) {
+                            productData[topic][subtopic].forEach((product, index) => {
+                                const productId = `${topicId}-${subtopicId}-${index}`;
+                                if (!conferenceState[productId]) {
+                                    conferenceState[productId] = { status: null, quantity: '', observations: '' };
+                                }
+                                
+                                const productContainer = document.createElement('div');
+                                productContainer.className = "product-container";
+                                productContainer.innerHTML = `
+                                    <div class="product-item">
+                                        <div class="flex-grow">
+                                            <p class="font-medium text-amber-950">${product.name}</p>
+                                            <small class="text-xs italic text-gray-600">Qde. mín. ${product.minQde}</small>
+                                        </div>
+                                        <div class="flex flex-col items-end">
+                                            <p class="text-xs font-semibold text-amber-950 mb-1">Qde. Mín. Ok?</p>
+                                            <div class="flex items-center space-x-2">
+                                                <button type="button" data-product-id="${productId}" data-status="Sim" class="status-button px-4 py-2 text-sm font-medium rounded-full bg-gray-200 text-gray-800 hover:bg-green-200 hover:text-green-800 transition-colors duration-200">Sim</button>
+                                                <button type="button" data-product-id="${productId}" data-status="Não" class="status-button px-4 py-2 text-sm font-medium rounded-full bg-gray-200 text-gray-800 hover:bg-red-200 hover:text-red-800 transition-colors duration-200">Não</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- Container para os campos extras, com layout flexível para evitar overflow -->
+                                    <div id="extra-fields-${productId}" class="hidden w-full mt-2 space-y-2 p-2">
+                                        <!-- O campo de quantidade -->
+                                        <div class="flex items-center w-full">
+                                            <label for="quantity-${productId}" class="text-sm font-medium text-amber-950 mr-2 whitespace-nowrap">🔢 Quantidade Contada:</label>
+                                            <input type="number" id="quantity-${productId}" class="w-20 p-2 rounded-lg border border-amber-800 text-amber-950 bg-white focus:outline-none focus:ring-2 focus:ring-amber-800">
+                                        </div>
+                                        <!-- O campo de observações, agora um textarea para expandir -->
+                                        <div class="flex items-center w-full">
+                                            <label for="obs-${productId}" class="text-sm font-medium text-amber-950 mr-2 whitespace-nowrap">📝 Observações:</label>
+                                            <textarea id="obs-${productId}" rows="1" class="auto-resize-textarea flex-grow p-2 rounded-lg border border-amber-800 text-amber-950 bg-white focus:outline-none focus:ring-2 focus:ring-amber-800"></textarea>
+                                        </div>
+                                    </div>
+                                `;
+                                contentDiv.appendChild(productContainer);
+                            });
+                        } else {
+                             contentDiv.innerHTML = `<p class="text-sm text-gray-500 italic">Não há produtos para conferir neste subtópico.</p>`
+                        }
+                        
+                        subtopicDiv.appendChild(contentDiv);
+                        accordionContainer.appendChild(subtopicDiv);
+                    });
+                });
+            }
+            
+            // Function to handle the accordion logic
+            function setupAccordion() {
+                const accordionButtons = document.querySelectorAll('.accordion-button');
+                accordionButtons.forEach(button => {
+                    button.addEventListener('click', () => {
+                        const content = button.nextElementSibling;
+                        const isExpanded = content.classList.contains('active');
+
+                        // Collapse all contents
+                        document.querySelectorAll('.accordion-content.active').forEach(c => c.classList.remove('active'));
+
+                        // Expand the clicked one
+                        if (!isExpanded) {
+                            content.classList.add('active');
+                        }
+                    });
+                });
+            }
+
+            // Function to check if a subtopic is complete
+            function isSubtopicComplete(topicId, subtopicId) {
+                const subtopicProducts = Object.keys(conferenceState).filter(id => id.startsWith(`${topicId}-${subtopicId}`));
+                if (subtopicProducts.length === 0) return true;
+                
+                return subtopicProducts.every(productId => {
+                    const productState = conferenceState[productId];
+                    // Change the condition to just check if a status has been selected
+                    return productState.status !== null;
+                });
+            }
+
+            // Function to update visual state of a subtopic button
+            function updateSubtopicVisuals(topicId, subtopicId) {
+                const allOkCheckbox = document.getElementById(`all-ok-${topicId}-${subtopicId}`);
+                if (!allOkCheckbox) return;
+                const subtopicButton = allOkCheckbox.closest('.accordion-button');
+                
+                let baseColor = 'bg-amber-200';
+                let completeColor = 'bg-amber-800';
+                
+                if (isSubtopicComplete(topicId, subtopicId)) {
+                    subtopicButton.classList.remove(baseColor, 'text-amber-950');
+                    subtopicButton.classList.add(completeColor, 'text-white');
+                } else {
+                    subtopicButton.classList.remove(completeColor, 'text-white');
+                    subtopicButton.classList.add(baseColor, 'text-amber-950');
+                }
+            }
+
+            // Function to update the WhatsApp preview text
+            function updateWhatsappPreview() {
+                const date = dateInput.value ? new Date(dateInput.value).toLocaleDateString('pt-BR') : '';
+                const responsible = responsibleSelect.value;
+                let previewText = `*📄 CONFERÊNCIA DE ESTOQUE*\n\n`;
+                previewText += `*📅 DATA:* ${date}\n`;
+                previewText += `*👤 RESPONSÁVEL:* ${responsible || 'Não informado'}\n\n`;
+                
+                previewText += `*🔍 Itens com Quantidade Abaixo da Mínima*\n\n`;
+                
+                let foundItems = false;
+                const itemsBySubtopic = {};
+
+                Object.keys(productData).forEach(topicName => {
+                    Object.keys(productData[topicName]).forEach(subtopicName => {
+                        const topicId = topicName.replace(/[^a-zA-Z0-9]/g, '');
+                        const subtopicId = subtopicName.replace(/[^a-zA-Z0-9]/g, '');
+                        
+                        const subtopicItems = [];
+                        productData[topicName][subtopicName].forEach((product, index) => {
+                            const productId = `${topicId}-${subtopicId}-${index}`;
+                            if (conferenceState[productId] && conferenceState[productId].status === 'Não') {
+                                const countedQde = conferenceState[productId].quantity || 'Não informada';
+                                subtopicItems.push(`*📦 ${product.name}:* ${countedQde}`);
+                                
+                                const obs = conferenceState[productId].observations;
+                                if (obs) {
+                                    subtopicItems.push(`_Observação: ${obs}._`);
+                                }
+                                
+                                foundItems = true;
+                            }
+                        });
+                        
+                        if (subtopicItems.length > 0) {
+                            itemsBySubtopic[subtopicName] = subtopicItems;
+                        }
+                    });
+                });
+
+                if (!foundItems) {
+                    previewText += "Nenhum item abaixo da quantidade mínima foi encontrado.\n";
+                } else {
+                    const subtopicNames = Object.keys(itemsBySubtopic);
+                    subtopicNames.forEach((subtopicName, index) => {
+                        // Adiciona uma linha em branco entre os subtópicos
+                        if (index > 0) {
+                            previewText += '\n\n';
+                        }
+                        
+                        previewText += `*${subtopicName}*\n`;
+                        previewText += itemsBySubtopic[subtopicName].join('\n');
+                        
+                    });
+                    previewText += '\n';
+                }
+                
+                whatsappPreview.textContent = previewText;
+            }
+
+            // Função para atualizar o estado visual dos botões Sim/Não
+            function updateButtonVisuals(productId, status) {
+                const parentDiv = document.querySelector(`.product-item [data-product-id="${productId}"]`)?.closest('.flex.items-center');
+                if (!parentDiv) return;
+                
+                const simButton = parentDiv.querySelector('[data-status="Sim"]');
+                const naoButton = parentDiv.querySelector('[data-status="Não"]');
+                if (!simButton || !naoButton) return;
+
+                // Reset all buttons to inactive state
+                simButton.classList.remove('bg-green-600', 'text-white');
+                simButton.classList.add('bg-gray-200', 'text-gray-800');
+                naoButton.classList.remove('bg-red-600', 'text-white');
+                naoButton.classList.add('bg-gray-200', 'text-gray-800');
+
+                // Set the active button to its correct state
+                if (status === 'Sim') {
+                    simButton.classList.remove('bg-gray-200', 'text-gray-800');
+                    simButton.classList.add('bg-green-600', 'text-white');
+                } else if (status === 'Não') {
+                    naoButton.classList.remove('bg-gray-200', 'text-gray-800');
+                    naoButton.classList.add('bg-red-600', 'text-white');
+                }
+            }
+
+
+            // Main setup
+            // Garante que o formulário seja renderizado primeiro
+            renderForm();
+            // E só então, carrega os dados salvos
+            loadFromLocalStorage(); 
+            
+            // O setup do accordion e os event listeners devem ser configurados após o renderForm
+            setupAccordion();
+
+            // Event Listeners for form fields
+            accordionContainer.addEventListener('click', (e) => {
+                const target = e.target;
+                const isStatusButton = target.classList.contains('status-button');
+                
+                if (isStatusButton) {
+                    const productId = target.dataset.productId;
+                    const status = target.dataset.status;
+                    const extraFields = document.getElementById(`extra-fields-${productId}`);
+                    
+                    if (status === 'Não') {
+                        extraFields.classList.remove('hidden');
+                        conferenceState[productId].status = 'Não';
+                        
+                        const parentAccordionContent = target.closest('.accordion-content');
+                        if (parentAccordionContent && !parentAccordionContent.classList.contains('active')) {
+                            document.querySelectorAll('.accordion-content.active').forEach(c => c.classList.remove('active'));
+                            parentAccordionContent.classList.add('active');
+                        }
+
+                    } else { // status === 'Sim'
+                        extraFields.classList.add('hidden');
+                        conferenceState[productId].status = 'Sim';
+                        conferenceState[productId].quantity = '';
+                        conferenceState[productId].observations = '';
+                        document.getElementById(`quantity-${productId}`).value = '';
+                        // Reset the textarea to its initial height
+                        const obsTextarea = document.getElementById(`obs-${productId}`);
+                        if (obsTextarea) {
+                            obsTextarea.value = '';
+                            obsTextarea.style.height = 'auto';
+                        }
+                    }
+
+                    updateButtonVisuals(productId, status);
+                    updateWhatsappPreview();
+                    saveToLocalStorage();
+                    
+                    const subtopicId = productId.split('-').slice(1, -1).join('-');
+                    const topicId = productId.split('-')[0];
+                    const allOkCheckbox = document.getElementById(`all-ok-${topicId}-${subtopicId}`);
+                    if (allOkCheckbox) {
+                       allOkCheckbox.checked = false;
+                       updateSubtopicVisuals(topicId, subtopicId);
+                    }
+                }
+            });
+
+            // Listener para o checkbox "Todos OK"
+            accordionContainer.addEventListener('change', (e) => {
+                const target = e.target;
+                const isCheckbox = target.matches('input[type="checkbox"]');
+
+                if (isCheckbox) {
+                    const subtopic = target.dataset.subtopic;
+                    const topic = target.dataset.topic;
+                    const topicId = topic.replace(/[^a-zA-Z0-9]/g, '');
+                    const subtopicId = subtopic.replace(/[^a-zA-Z0-9]/g, '');
+
+                    const productsInSubtopic = productData[topic][subtopic];
+                    
+                    if (target.checked) {
+                        productsInSubtopic.forEach((_, index) => {
+                            const productId = `${topicId}-${subtopicId}-${index}`;
+                            conferenceState[productId].status = 'Sim';
+                            conferenceState[productId].quantity = '';
+                            conferenceState[productId].observations = '';
+                            const quantityInput = document.getElementById(`quantity-${productId}`);
+                            const obsTextarea = document.getElementById(`obs-${productId}`);
+
+                            if (quantityInput) quantityInput.value = '';
+                            if (obsTextarea) {
+                                obsTextarea.value = '';
+                                obsTextarea.style.height = 'auto';
+                            }
+
+                            updateButtonVisuals(productId, 'Sim');
+                            document.getElementById(`extra-fields-${productId}`).classList.add('hidden');
+                        });
+                        updateSubtopicVisuals(topicId, subtopicId);
+                    } else {
+                         updateSubtopicVisuals(topicId, subtopicId);
+                    }
+                    updateWhatsappPreview();
+                    saveToLocalStorage();
+                }
+            });
+
+            // Listener para os campos de quantidade e observações
+            accordionContainer.addEventListener('input', (e) => {
+                const target = e.target;
+                const isQuantity = target.id.startsWith('quantity-');
+                const isObservations = target.id.startsWith('obs-');
+                
+                if (isQuantity || isObservations) {
+                    const productId = target.id.split('-').slice(1).join('-');
+                    if (isQuantity) {
+                        conferenceState[productId].quantity = target.value;
+                    }
+                    if (isObservations) {
+                        conferenceState[productId].observations = target.value;
+                        // Ajustar a altura do textarea automaticamente
+                        target.style.height = 'auto';
+                        target.style.height = target.scrollHeight + 'px';
+                    }
+                    updateWhatsappPreview();
+                    saveToLocalStorage();
+
+                    const topicId = productId.split('-')[0];
+                    const subtopicId = productId.split('-').slice(1, -1).join('-');
+                    updateSubtopicVisuals(topicId, subtopicId);
+                }
+            });
+
+            dateInput.addEventListener('change', () => {
+                updateWhatsappPreview();
+                saveToLocalStorage();
+            });
+
+            responsibleSelect.addEventListener('change', () => {
+                updateWhatsappPreview();
+                saveToLocalStorage();
+            });
+
+            // "Hoje" button functionality
+            document.getElementById('today-button').addEventListener('click', () => {
+                const today = new Date();
+                const year = today.getFullYear();
+                const month = String(today.getMonth() + 1).padStart(2, '0');
+                const day = String(today.getDate()).padStart(2, '0');
+                dateInput.value = `${year}-${month}-${day}`;
+                updateWhatsappPreview();
+                saveToLocalStorage();
+            });
+
+            // Copy to Whatsapp button functionality
+            document.getElementById('copy-button').addEventListener('click', () => {
+                const textToCopy = whatsappPreview.textContent;
+                const textarea = document.createElement('textarea');
+                textarea.value = textToCopy;
+                document.body.appendChild(textarea);
+                textarea.select();
+                try {
+                    const successful = document.execCommand('copy');
+                    if (successful) {
+                        document.getElementById('copy-confirmation').classList.remove('hidden');
+                        setTimeout(() => {
+                            document.getElementById('copy-confirmation').classList.add('hidden');
+                        }, 2000);
+                    } else {
+                        const modalMessage = document.getElementById('modal-message');
+                        modalMessage.textContent = 'Não foi possível copiar o texto. Por favor, selecione e copie manualmente.';
+                        modal.classList.add('flex');
+                        modal.classList.remove('hidden');
+                    }
+                } catch (err) {
+                    const modalMessage = document.getElementById('modal-message');
+                    modalMessage.textContent = 'Não foi possível copiar o texto. Por favor, selecione e copie manualmente.';
+                        modal.classList.add('flex');
+                        modal.classList.remove('hidden');
+                } finally {
+                    document.body.removeChild(textarea);
+                }
+            });
+            
+            // Modal close button
+            document.getElementById('modal-close-button').addEventListener('click', () => {
+                modal.classList.add('hidden');
+            });
+            
+            // --- New functionality for clearing the form ---
+            const clearFormButton = document.getElementById('clear-form-button');
+            const confirmClearButton = document.getElementById('confirm-clear-button');
+            const cancelClearButton = document.getElementById('cancel-clear-button');
+
+            clearFormButton.addEventListener('click', () => {
+                clearModal.classList.add('flex');
+                clearModal.classList.remove('hidden');
+            });
+
+            confirmClearButton.addEventListener('click', () => {
+                localStorage.clear();
+                window.location.reload(); // Reload the page to reset the form
+            });
+
+            cancelClearButton.addEventListener('click', () => {
+                clearModal.classList.add('hidden');
+                clearModal.classList.remove('flex');
+            });
+
+
+            // Initial preview update
+            updateWhatsappPreview();
+        });
+    </script>
+</body>
+</html>
